@@ -1,0 +1,20 @@
+# Cloudflare Tunnel configuration.
+#
+# Replace the tunnel ID and credentials file below with the values printed by:
+#   cloudflared tunnel create magpie-public
+# Then create the DNS route and put your own public host in the ingress rule.
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: 'D:\magpie-public\secrets\00000000-0000-0000-0000-000000000000.json'
+no-autoupdate: true
+metrics: 127.0.0.1:20242
+ingress:
+  - hostname: 'apimagpie.example.com'
+    service: http://127.0.0.1:8790
+    originRequest:
+      connectTimeout: 30s
+      noHappyEyeballs: true
+      # Keep chunked transfer encoding: SSE / long-running completions must
+      # stream through, not be buffered into one response.
+      disableChunkedEncoding: false
+      noTLSVerify: false
+  - service: http_status:404

@@ -1,0 +1,12 @@
+# Store text as LF in the index; check out Windows-native scripts as CRLF
+# (cmd.exe and Windows Script Host are happiest with CRLF). Everything else
+# stays LF, so the index remains byte-stable across machines.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+
+# Third-party binary is ignored (see bin/README.md), but never treat it as text.
+*.exe binary
+*.png binary

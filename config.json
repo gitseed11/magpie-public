@@ -1,0 +1,27 @@
+{
+  "listenHost": "127.0.0.1",
+  "listenPort": 8790,
+  "upstream": "http://127.0.0.1:3425",
+  "settingsPath": "C:\\Users\\YOUR_USERNAME\\.config\\magpie\\settings.json",
+  "lanKeyCacheMs": 5000,
+  "callerAgent": "magpie-public",
+  "allowedPaths": [
+    "/v1/models",
+    "/v1/models/*",
+    "/v1/chat/completions",
+    "/v1/responses",
+    "/v1/messages",
+    "/v1/messages/count_tokens",
+    "/v1beta/models",
+    "/v1beta/models/*"
+  ],
+  "rateLimit": {
+    "windowMs": 60000,
+    "maxRequests": 600,
+    "globalMaxRequests": 1800,
+    "authFailMax": 20
+  },
+  "maxBodyBytes": 33554432,
+  "upstreamTimeoutMs": 600000,
+  "maxLogBytes": 8388608
+}
