@@ -182,9 +182,10 @@ OpenAI / Anthropic / Gemini 的字段、状态码、自定义字段（如 `reaso
    （上游本身也带这两个头；**Cloudflare 回程会过滤掉 `x-accel-buffering`**，
    实际起作用的是 `cache-control` 与流式传输本身）；其余响应头保持上游原样。
 
-代理自己产生的响应只有：标准状态码（`401` / `404` / `413` / `429` / `502` / `503` / `504`）
+代理自己产生的响应只有：标准状态码（`400` / `401` / `403` / `404` / `413` / `429` / `502` / `503` / `504`）
 + OpenAI 风格的最小错误 JSON（`{"error":{"message":…,"type":…}}`），
 并按 HTTP 规范带 `www-authenticate` / `retry-after`。不加自定义头、不注入字段、不做内容转换。
+（`400` 用于畸形请求，`403` 用于非 loopback 来源；正常推理请求不会触发这两类。）
 
 ---
 
@@ -201,7 +202,7 @@ OpenAI / Anthropic / Gemini 的字段、状态码、自定义字段（如 `reaso
 | `secrets/cert.pem` | **Cloudflare 登录凭据**（`ARGO TUNNEL TOKEN`，内含账户级 `apiToken`，等同密码，只读） |
 | `secrets/<tunnel-id>.json` | 隧道凭据，**保密** |
 | `start.cmd` | 启动 / 停止 / 查看状态（唯一入口） |
-| `stop.cmd` | **只停公网这一侧**（代理 + 隧道 + 看门狗），独立可用，等价 `start.cmd stop` |
+| `stop.cmd` | **只停公网这一侧**（代理 + 隧道 + 看门狗），独立可用；比 `start.cmd stop` 更完整（校验 8790 + 20242、幂等、失败退出 1） |
 | `run.ps1` / `launch.vbs` | 看门狗 + 隐藏启动 |
 | `logs/` | 运行日志 |
 | `LICENSE` | MIT 许可证 |
@@ -227,9 +228,11 @@ OpenAI / Anthropic / Gemini 的字段、状态码、自定义字段（如 `reaso
 | `logs/`、`run/` | 日志、pid、单实例锁 |
 | `bin/*.exe` | 第三方二进制（约 55 MB），版本与 SHA-256 记在 `bin/README.md` |
 
-克隆/恢复后需要另外补两样东西：按 `bin/README.md` 放回 `cloudflared.exe`，
-以及让 Magpie 生成 `lanKey`（见第 2 节）。提交身份与远程仓库按需用
-`git config user.name/user.email` 和 `git remote add origin …` 设置。
+克隆/恢复后还需要补：按 `bin/README.md` 放回 `cloudflared.exe`；按 `config.yml`
+填入隧道 ID、凭据文件与域名；准备 `secrets/cert.pem` 和隧道凭据；让 Magpie 生成
+`lanKey`（见第 2 节）。完整步骤见 `DEPLOY-OTHER-MACHINE.md` 第 2–6 节。
+提交身份与远程仓库按需用 `git config user.name/user.email` 和
+`git remote add origin …` 设置。
 
 ---
 
@@ -237,8 +240,11 @@ OpenAI / Anthropic / Gemini 的字段、状态码、自定义字段（如 `reaso
 
 ### 启动 / 停止 / 状态（纯手动）
 
-**不设置任何开机自启**。启动与查状态用 `start.cmd`；停止既可以 `start.cmd stop`，
-也可以直接双击独立的 `stop.cmd`（两者等价，`stop.cmd` 只杀代理/隧道/看门狗，绝不动 Magpie）：
+**不设置任何开机自启**。启动与查状态用 `start.cmd`；停止推荐直接双击独立的
+`stop.cmd`。两者都会停代理/隧道/看门狗且绝不动 Magpie，但 `stop.cmd` 更完整：
+它核对 8790 与 20242、没在运行时明确提示、失败退出 1；`start.cmd stop` 只核对 8790，失败也返回 0。
+
+> 目录名需保持 `magpie-public`：`start.cmd` / `stop.cmd` 用 `*magpie-public*` 匹配本项目进程，改名后停止脚本会匹配不到。
 
 | 操作 | 命令 |
 |---|---|
@@ -314,7 +320,7 @@ cd "D:\magpie-public"
 
 ```powershell
 # 1. 停服务
-cmd /c stop.cmd          # 等价于 cmd /c start.cmd stop
+cmd /c stop.cmd          # 推荐；start.cmd stop 是简化版，校验较少
 
 # 2. 确认没有遗留计划任务（纯手动模式本就没有）
 Unregister-ScheduledTask -TaskName 'MagpiePublicAPI' -Confirm:$false -ErrorAction SilentlyContinue

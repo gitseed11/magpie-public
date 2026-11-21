@@ -23,7 +23,7 @@
 | 14 | 无连接池（Magpie 可后启动） | 连续请求无 502 | 20 次连续公网请求全部 200；`upstreamAgent = false` | ✅ |
 | 15 | 伪造 XFF 不能绕过限流 | 同一调用方过 600 次即 429 | 700 次（`CF-Connecting-IP` 固定、`X-Forwarded-For` 每次不同）→ **600×200 + 100×429**，0.8 s 内完成 | ✅ |
 | 16 | 错误 Key 暴力破解被节流 | 第 21 次起 429 | 固定调用方 60 次坏 key → **20×401 + 40×429** | ✅ |
-| 17 | 编码路径穿越被拒 | 404 | `..%2f`、`%2e%2e`、`%5c`、`%00`、裸 `..`、`..;`、`//` → 全 404；正常路径 200 | ✅ |
+| 17 | 编码路径穿越被拒 | 404 | 代理层直接拒绝 `..%2f`、`%2e%2e`、`%5c`、`%00`、裸 `..`、`//`（均 404）；`..;` 不在代理拒绝形状内，转发后由上游返回 404；正常路径 200 | ✅ |
 | 18 | 超大 body 被拒 | 413 | 40MB（带 `Content-Length`）→ **413**；真正 chunked 40MB（`Transfer-Encoding: chunked`，无长度声明）→ **413**，且同一连接后续请求仍 200 | ✅ |
 | 19 | `/v1beta/models` 可用 | 200 | 修复白名单后 → **200**（Gemini SDK 首调不再 404）；`POST …/<model>:generateContent` → **200**，返回 `candidates[0].content.parts[0].text` | ✅ |
 | 20 | `secrets\` 与 `API-KEY.txt` 权限 | 仅当前用户/SYSTEM/Administrators | `icacls` 确认已无 `Authenticated Users` / `Users` | ✅ |

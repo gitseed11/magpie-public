@@ -13,7 +13,7 @@
   → 127.0.0.1:3425  Magpie（不动）
 ```
 
-全程 **不改 Magpie 任何配置、不重启 Magpie**。
+初始部署全程 **不改 Magpie 任何配置、不重启 Magpie**（Key 轮换是例外，见第 9 节）。
 
 ---
 
@@ -63,6 +63,8 @@ Magpie 网关地址以 `gateway.json` 的 `addr` 为准；若不是 `127.0.0.1:3
 
 以下用 `D:\magpie-public` 作为安装目录（换成你自己的路径也可以）。
 **路径含空格没问题**（脚本里已对路径加引号），但请保持一致，后面要替换时注意。
+目录名请保持 `magpie-public`：`start.cmd` / `stop.cmd` 用 `*magpie-public*`
+匹配本项目进程，改名后停止脚本会匹配不到。
 
 ```bash
 mkdir -p "D:/magpie-public/bin" \
@@ -106,11 +108,12 @@ sha256sum "D:/magpie-public/bin/cloudflared.exe"
 2. `/v1/magpie*`、`/api*` 直接 404（管理面永不出本机）；
 3. 只放行 `config.json` 里 `allowedPaths` 列出的推理路由；
 4. 校验 `Authorization: Bearer <key>`、`x-api-key: <key>` 或 `x-goog-api-key: <key>`，
-   与 Magpie 的 `lanKey` 比对（定长时间比较）；不接受 `?key=` 查询串；
+   与 Magpie 的 `lanKey` 比对（恒定时间比较）；不接受 `?key=` 查询串；
 5. 限流：按调用方 600 次/分，另有全局 1800 次/分兜底；身份只取 `CF-Connecting-IP`
    （**不信任** `X-Forwarded-For`，否则可被伪造绕过）；同一调用方鉴权失败 20 次后转为 429；
 6. 请求体上限 32 MB（超限 413，含 chunked）、上游超时 600 s（超时 504）；
-7. 拒绝路径穿越形状（`..`、`%2e`、`%2f`、`%5c`、`%00`、反斜杠）；
+7. 拒绝路径穿越形状（`..`、`%2e`、`%2f`、`%5c`、`%00`、反斜杠、`//`）；
+   `..;` 这类不含拒绝形状的路径会被转发，由上游决定是否返回 404；
 8. 转发时把 `Host` 改写为上游、把 `Authorization` 换成固定调用方标识，
    避免公网 Key 落进 Magpie 的 `usage.jsonl`；
 9. SSE 流式透传，不缓冲；
@@ -350,14 +353,17 @@ tail -20 logs/cloudflared.out.log     # 应看到 Registered tunnel connection
 ### 6.1 文件
 
 - `start.cmd`：启动 / 停止 / 查看状态（唯一入口）。
-- `stop.cmd`：**只停公网这一侧**（代理 + 隧道 + 看门狗），独立可用、幂等，
-  等价 `start.cmd stop`；即使 `start.cmd` 被改坏也能用它收尾。
+- `stop.cmd`：**只停公网这一侧**（代理 + 隧道 + 看门狗），独立可用、幂等；
+  比 `start.cmd stop` 更完整（校验 8790 + 20242、失败退出 1），
+  即使 `start.cmd` 被改坏也能用它收尾。
 - `run.ps1`：看门狗，负责拉起代理与隧道、异常重启、写日志。
 - `launch.vbs`：用隐藏窗口调用 `run.ps1`（`start.cmd` 会调用它）。
 - `sync-key.ps1`：把 `settings.json` 的 `lanKey` 同步到 `API-KEY.txt`，方便随时查看。
   看门狗每轮循环都会调用它；只有 key 真正变化时才写盘。
 
-复制到目标机后，通常只需要改 `config.json` 里的 `settingsPath`（见 3.2）。
+复制到目标机后，除了 `config.json` 的 `settingsPath`（见 3.2），还要：
+按第 4 节创建隧道并把隧道 ID、凭据文件与域名写进 `config.yml`；准备
+`secrets/cert.pem` 与隧道凭据；按 4.6 收紧目录 ACL。完整顺序见第 2–6 节。
 日志路径默认是脚本旁边的 `logs\proxy.log`，不需要配置。
 
 - `run.ps1` 的 Node 路径：先试 `C:\Program Files\nodejs\node.exe`，不存在则自动
@@ -375,7 +381,7 @@ tail -20 logs/cloudflared.out.log     # 应看到 Registered tunnel connection
 | 操作 | 命令 |
 |---|---|
 | 启动 | 双击 `start.cmd` |
-| 停止 | 双击 `stop.cmd`（等价 `start.cmd stop`） |
+| 停止 | 双击 `stop.cmd`（推荐；`start.cmd stop` 是简化版） |
 | 查看状态 | `start.cmd status` |
 
 `start.cmd` 会等到代理真正开始监听才返回，并同时报告 Magpie 是否在线。
@@ -555,7 +561,7 @@ netstat -ano | findstr ":8790"
 
 - `config.json` 的 `listenPort` / `upstream`
 - `config.yml` 的 `service`（指向代理端口）与 `metrics`
-- `start.cmd` 顶部的 `PORT` / `METRICS` / `UPSTREAM`（只用于状态展示与端口探测）
+- `start.cmd` / `stop.cmd` 顶部的 `PORT` / `METRICS` / `UPSTREAM`（只用于状态展示与端口探测）
 - 本文件第 7 节验收清单里的端口
 
 `run.ps1` **不需要**改：代理端口与上游取自 `config.json`，metrics 地址取自
@@ -567,7 +573,8 @@ netstat -ano | findstr ":8790"
 stop.cmd
 ```
 
-等价写法：`start.cmd stop`（两者逻辑相同，`stop.cmd` 是独立文件，方便单独双击/单独拷贝）。
+`start.cmd stop` 也可用，但它是简化版：只校验 8790、失败也退出 0。
+`stop.cmd` 校验 8790 + 20242、幂等、失败退出 1，推荐使用。
 
 > `stop` 会中断**正在传输中**的请求（客户端收到 502）；重启后新请求立即恢复。
 > 代理不做请求重放，长推理请求请等空闲时再停。
@@ -596,7 +603,7 @@ Get-CimInstance Win32_Process |
 
 ```bash
 # 1. 停服务（纯手动模式没有计划任务需要删）
-stop.cmd              # Windows cmd 里执行；等价 start.cmd stop
+stop.cmd              # Windows cmd 里执行；推荐；start.cmd stop 是简化版
 
 # 2. 删隧道
 cd "D:/magpie-public"

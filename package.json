@@ -1,6 +1,6 @@
 {
   "name": "magpie-public",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "API-key authenticated public gateway for a local Magpie LLM endpoint, exposed through Cloudflare Tunnel.",
   "license": "MIT",
