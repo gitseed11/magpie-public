@@ -1,0 +1,89 @@
+{
+  "listenHost": "127.0.0.1",
+  "listenPort": 8790,
+  "upstream": "http://127.0.0.1:3425",
+  "settingsPath": "%USERPROFILE%\\.config\\magpie\\settings.json",
+  "lanKeyCacheMs": 5000,
+  "callerAgent": "magpie-public",
+  "allowedRoutes": [
+    {
+      "path": "/v1/models",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/v1/models/*",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/v1/chat/completions",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1/responses",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1/messages",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1/messages/count_tokens",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1beta/models",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/v1beta/models/*",
+      "methods": [
+        "GET",
+        "HEAD"
+      ]
+    },
+    {
+      "path": "/v1beta/models/*:generateContent",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1beta/models/*:streamGenerateContent",
+      "methods": [
+        "POST"
+      ]
+    },
+    {
+      "path": "/v1beta/models/*:countTokens",
+      "methods": [
+        "POST"
+      ]
+    }
+  ],
+  "rateLimit": {
+    "windowMs": 60000,
+    "maxRequests": 600,
+    "globalMaxRequests": 1800,
+    "authFailMax": 20
+  },
+  "maxBodyBytes": 33554432,
+  "upstreamTimeoutMs": 600000,
+  "maxLogBytes": 8388608
+}

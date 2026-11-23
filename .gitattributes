@@ -1,0 +1,10 @@
+# Normalize text in the index; use native newlines for Windows script hosts.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+
+# Binary assets must never be treated as text.
+*.exe binary
+*.png binary

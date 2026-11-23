@@ -1,0 +1,14 @@
+{
+  "name": "magpie-public",
+  "version": "2.0.0",
+  "private": true,
+  "description": "API-key authenticated public gateway for a local Magpie LLM endpoint, exposed through Cloudflare Tunnel.",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node proxy.js"
+  }
+}
