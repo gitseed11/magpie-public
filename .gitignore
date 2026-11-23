@@ -1,0 +1,29 @@
+# Local secrets and runtime state -- never commit these.
+secrets/
+API-KEY.txt
+API-KEY.txt.*.tmp
+logs/
+run/
+*.log
+
+# Credentials, private keys, certificates, backups and environment files.
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.bak
+.env*
+
+# Third-party runtime binary; restore it per bin/README.md.
+bin/*.exe
+
+# Optional tooling output.
+node_modules/
+
+# OS / editor noise.
+Thumbs.db
+Desktop.ini
+.DS_Store
+*~
+*.swp

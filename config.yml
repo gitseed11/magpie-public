@@ -1,0 +1,17 @@
+# Replace the all-zero tunnel ID/credentials and example hostname with your own.
+# Daily runtime needs only the tunnel JSON; keep account-level cert.pem outside.
+tunnel: 00000000-0000-0000-0000-000000000000
+credentials-file: 'D:\magpie-public\secrets\00000000-0000-0000-0000-000000000000.json'
+no-autoupdate: true
+metrics: 127.0.0.1:20242
+ingress:
+  - hostname: 'apimagpie.example.com'
+    service: http://127.0.0.1:8790
+    originRequest:
+      connectTimeout: 30s
+      noHappyEyeballs: true
+      # Keep chunked transfer encoding: SSE / long-running completions must
+      # stream through, not be buffered into one response.
+      disableChunkedEncoding: false
+      noTLSVerify: false
+  - service: http_status:404
