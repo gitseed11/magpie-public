@@ -1,0 +1,8 @@
+# Store and check out LF everywhere: the working tree is LF today and every
+# consumer here (Node, PowerShell, cmd, YAML) accepts LF. This keeps the index
+# byte-stable and avoids CRLF/LF churn regardless of the machine that clones.
+* text=auto eol=lf
+
+# Third-party binary is ignored (see bin/README.md), but never treat it as text.
+*.exe binary
+*.png binary
